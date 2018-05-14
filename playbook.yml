@@ -36,10 +36,11 @@
           remote_src: yes
         become: no
 
-      - name: Ensure cassandra is in path
-        blockinfile:
+      - name: Ensure bash profile is setup
+        lineinfile:
           path: /home/vagrant/.bash_profile
-          content: |
-          if [ -d "$HOME/opt/cassandra" ]; then
-            export PATH="$PATH:$HOME/{{ cass_dir }}/bin"
-          fi
+          line: "{{ item }}"
+          create: yes
+        become: no
+        with_items:
+          - 'export PATH="$PATH:$HOME/{{ cass_dir }}/bin"'
