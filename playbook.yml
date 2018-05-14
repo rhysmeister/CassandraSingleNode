@@ -1,0 +1,45 @@
+---
+  - hosts: all
+    gather_facts: yes
+    become: yes
+    vars:
+      additional_packages: [
+        "git",
+        "wget"
+      ]
+      cassandra_tar_archive: "http://mirror.easyname.ch/apache/cassandra/3.11.2/apache-cassandra-3.11.2-bin.tar.gz"
+
+    tasks:
+
+      - name: Install additional packages
+        apt:
+          name: "{{ item }}"
+          state: present
+          update_cache: yes
+        with_items:
+          - "{{ additional_packages }}"
+
+      - name: Download Cassandra tar archive
+        get_url:
+          url: "{{ cassandra_tar_archive }}"
+          dest: "/home/vagrant/{{ cassandra_tar_archive | basename }}"
+        become: no
+
+      - set_fact:
+          cass_dir: "{{ cassandra_tar_archive | basename | replace('-bin.tar.gz', '') }}"
+
+      - name: Extract Cassandra cassandra archive
+        unarchive:
+          src: "/home/vagrant/{{ cassandra_tar_archive | basename }}"
+          dest: "/home/vagrant"
+          creates: "{{ cass_dir }}"
+          remote_src: yes
+        become: no
+
+      - name: Ensure cassandra is in path
+        blockinfile:
+          path: /home/vagrant/.bash_profile
+          content: |
+          if [ -d "$HOME/opt/cassandra" ]; then
+            export PATH="$PATH:$HOME/{{ cass_dir }}/bin"
+          fi
